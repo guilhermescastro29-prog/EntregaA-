@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestor de Entregas</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#2196F3">
+</head>
+<body>
+
+  <!-- Barra Fixa de Comando de Voz -->
+<div id="barra-voz" style="position: sticky; top: 0; z-index: 1000; background: #007bff; color: white; padding: 10px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: space-between;">
+  <button id="btnMicrofone" type="button" onclick="alternarVoz()" style="background: #ffffff; color: #007bff; border: none; padding: 8px 14px; border-radius: 20px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+    🎙️ <span id="txtBtnVoz">Ligar Voz</span>
+  </button>
+  <span id="statusVoz" style="font-size: 0.85rem; font-weight: 500; font-style: italic; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 65%;">
+    Aguardando comando...
+  </span>
+</div>
+
+  <main>
+    <!-- ABA 1: CLIENTES -->
+    <div id="aba-cliente" class="aba-conteudo ativa">
+  <h2>👤 Cadastrar / Editar Cliente</h2>
+
+  <form id="formCliente">
+    <input type="hidden" id="clienteIdEditando">
+    <input type="hidden" id="coordenadas">
+
+    <label for="nomeCliente">Nome do Cliente *</label>
+    <input type="text" id="nomeCliente" placeholder="Ex: João da Silva" required style="width: 100%; padding: 8px; margin-bottom: 10px; box-sizing: border-box;">
+
+    <label for="whatsApp">WhatsApp / Telefone</label>
+    <input type="tel" id="whatsApp" placeholder="(33) 99999-9999" style="width: 100%; padding: 8px; margin-bottom: 10px; box-sizing: border-box;">
+
+    <label for="endereco">Endereço Completo</label>
+    <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+      <input type="text" id="endereco" placeholder="Rua, número, bairro" style="flex: 1; padding: 8px; box-sizing: border-box;">
+      <button type="button" onclick="capturarGps()" style="background: #17a2b8; color: white; border: none; border-radius: 4px; padding: 8px 12px; cursor: pointer; white-space: nowrap;">📍 GPS</button>
+    </div>
+    <small id="statusGps" style="display: block; margin-bottom: 10px; color: #666;"></small>
+
+    <label>Validades dos Galões em Posse do Cliente</label>
+    <div id="containerGaloes">
+      <!-- Campos de validades dinâmicos gerados via JS -->
+    </div>
+    <button type="button" onclick="adicionarCampoGalao()" style="background: #6c757d; color: white; border: none; border-radius: 4px; padding: 8px; margin-bottom: 15px; cursor: pointer; width: 100%;">➕ Adicionar Mais um Galão</button>
+
+    <label for="vasilhamesComprados">Vasilhames Comprados (se houver)</label>
+    <input type="text" id="vasilhamesComprados" placeholder="Ex: 1 vasilhame próprio" style="width: 100%; padding: 8px; margin-bottom: 10px; box-sizing: border-box;">
+
+    <label for="notas">Observações / Notas</label>
+    <textarea id="notas" placeholder="Preferência de horário, ponto de referência..." rows="2" style="width: 100%; padding: 8px; margin-bottom: 15px; box-sizing: border-box;"></textarea>
+
+    <!-- ÁREA DOS BOTÕES DE SALVAR E CANCELAR -->
+    <div style="display: flex; gap: 10px;">
+      <button type="submit" id="btnSalvarCliente" style="flex: 2; background-color: #28a745; color: white; border: none; padding: 12px; border-radius: 4px; font-size: 1rem; font-weight: bold; cursor: pointer;">
+        💾 Salvar Cliente
+      </button>
+      <button type="button" id="btnCancelarEdicao" onclick="limparFormularioCliente()" style="flex: 1; background-color: #6c757d; color: white; border: none; padding: 12px; border-radius: 4px; font-size: 0.9rem; cursor: pointer; display: none;">
+        ❌ Cancelar
+      </button>
+    </div>
+  </form>
+
+  <hr style="margin: 25px 0; border: 0; border-top: 1px solid #ccc;">
+
+  <h2>📋 Lista de Clientes</h2>
+  <div id="listaClientes"></div>
+</div>
+
+    <!-- ABA 2: LANÇAMENTO RÁPIDO DE ENTREGA -->
+    <div id="aba-entrega" class="aba-conteudo">
+  <h2>🚀 Novo Pedido de Entrega</h2>
+  
+  <!-- Formulário para Criar o Pedido -->
+  <form id="formPedidoEntrega">
+    <select id="selectCliente" required>
+      <option value="">Selecione um cliente...</option>
+    </select>
+
+    <input type="number" id="qtdEntregue" placeholder="Qtd. de galões cheios a levar" min="1" required>
+    <input type="text" id="obsEntrega" placeholder="Observação / Recado (opcional)">
+
+    <button type="submit" style="background-color: #007bff; color: white;">➕ Adicionar Pedido à Fila</button>
+  </form>
+
+  <hr style="margin: 20px 0; border: 0; border-top: 1px solid #ccc;">
+
+  <h2>📋 Fila de Entregas Pendentes</h2>
+  <div id="filaEntregas"></div>
+</div>
+
+    <!-- ABA 3: RESUMO DO DIA -->
+    <div id="aba-resumo" class="aba-conteudo">
+      <section class="card">
+        <h2>📊 Resumo das Entregas de Hoje</h2>
+        <div class="metricas-grid">
+          <div class="metrica-box">
+            <span id="totalGaloesHoje">0</span>
+            <small>Galões Entregues</small>
+          </div>
+          <div class="metrica-box">
+            <span id="totalVaziosHoje">0</span>
+            <small>Vazios Recolhidos</small>
+          </div>
+          <div class="metrica-box">
+            <span id="totalFaturamentoHoje">R$ 0</span>
+            <small>Total Recebido</small>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Histórico do Dia</h2>
+        <div id="historicoEntregas"></div>
+      </section>
+    </div>
+  </main>
+
+  <!-- MENU INFERIOR FIXO -->
+  <nav class="menu-inferior">
+    <button class="btn-nav ativo" onclick="mudarAba('aba-clientes', this)">
+      👥<br>Clientes
+    </button>
+    <button class="btn-nav" onclick="mudarAba('aba-entrega', this)">
+      🚚<br>Lançar Entrega
+    </button>
+    <button class="btn-nav" onclick="mudarAba('aba-resumo', this)">
+      📊<br>Resumo
+    </button>
+  </nav>
+
+  <script src="app.js"></script>
+</body>
+</html>
